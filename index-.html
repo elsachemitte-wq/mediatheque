@@ -1,3 +1,8 @@
+index-2.html
+18.71 Ko•239 lignes
+•
+Le formatage peut être différent de la source
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -168,30 +173,71 @@
         taille: "1.2 Mo"
       }
     ];
-         },
-         {
-           id: 2,
-           titre: "Revue Marché — 10 Avril 2026",
-           auteur: "Équipe Recherche",
-           categorie: "Finance",
-           description: "Cessez-le-feu Iran-US, rebond historique du CAC 40 (+4,5%), focus PEA et réforme Budget 2026, saison des résultats Q1.",
-           fichier: "Revue_Marche_10_Avril_2026.pdf",
-           date: "2026-04-10",
-           pages: 6,
-           taille: "75 Ko"
-         }
-    {
-           id: 3,
-        titre: "Revue Marché — 17 Avril 2026",
-        auteur: "Équipe Recherche",
-        categorie: "Finance",
-        description: "Choc Ormuz : pétrole -10%, CAC +2%. JPM et Citi battent largement les attentes. Or record $4 879/oz. Fed hawkish, Alstom -27%. Trêve expire le 22 avril.",
-        fichier: "Revue_Marche_17_Avril_2026.pdf",
-        date: "2026-04-17",
-        pages: 8,
-        taille: "1.5 Mo"
-         }
-       ];
 
     var activeCategory = 'Tous', searchQuery = '';
     var searchInput = document.getElementById('search-input');
+    var searchClear = document.getElementById('search-clear');
+    var filtersBar = document.getElementById('filters-bar');
+    var cardsGrid = document.getElementById('cards-grid');
+    var docCount = document.getElementById('doc-count');
+
+    var ico = {
+      open:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+      dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+      user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+      pg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      sz:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+    };
+
+    function fmtDate(s){var m=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];var d=new Date(s);return d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear();}
+    function norm(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+    function getCats(){var c=new Set();documents.forEach(function(d){c.add(d.categorie);});return ['Tous'].concat(Array.from(c).sort());}
+
+    function renderFilters(){
+      var cats=getCats(),h='<span class="filters-label">Catégories</span>';
+      cats.forEach(function(c){h+='<button class="filter-btn'+(c===activeCategory?' active':'')+'" data-cat="'+c+'">'+c+'</button>';});
+      h+='<span class="results-count" id="results-count"></span>';
+      filtersBar.innerHTML=h;
+      filtersBar.querySelectorAll('.filter-btn').forEach(function(b){b.addEventListener('click',function(){activeCategory=this.dataset.cat;render();});});
+    }
+
+    function cardHTML(d){
+      return '<article class="card"><div class="card-header"><div class="card-icon">PDF</div><div class="card-meta-top">'+
+        '<span class="card-category">'+d.categorie+'</span><h3 class="card-title">'+d.titre+'</h3></div></div>'+
+        '<div class="card-body"><p class="card-description">'+d.description+'</p></div>'+
+        '<div class="card-details">'+
+        '<span class="card-detail">'+ico.user+' '+d.auteur+'</span>'+
+        '<span class="card-detail">'+ico.cal+' '+fmtDate(d.date)+'</span>'+
+        '<span class="card-detail">'+ico.pg+' '+d.pages+' pages</span>'+
+        '<span class="card-detail">'+ico.sz+' '+d.taille+'</span></div>'+
+        '<div class="card-actions">'+
+        '<a href="'+d.fichier+'" target="_blank" rel="noopener" class="btn btn-primary">'+ico.open+' Consulter</a>'+
+        '<a href="'+d.fichier+'" download class="btn btn-secondary">'+ico.dl+' Télécharger</a></div></article>';
+    }
+
+    function getFiltered(){
+      var q=norm(searchQuery.trim());
+      return documents.filter(function(d){
+        if(activeCategory!=='Tous'&&d.categorie!==activeCategory)return false;
+        if(q){var hay=norm(d.titre+' '+d.auteur+' '+d.description+' '+d.categorie);var w=q.split(/\s+/);for(var i=0;i<w.length;i++){if(hay.indexOf(w[i])===-1)return false;}}
+        return true;
+      });
+    }
+
+    function render(){
+      renderFilters();var f=getFiltered();
+      var rc=document.getElementById('results-count');
+      if(rc){rc.textContent=(activeCategory!=='Tous'||searchQuery.trim())?f.length+' résultat'+(f.length!==1?'s':''):'';}
+      if(f.length===0){cardsGrid.innerHTML='<div class="empty-state"><div class="empty-state-icon">📄</div><h3>Aucun document trouvé</h3><p>Essayez de modifier votre recherche ou de changer de catégorie.</p></div>';}
+      else{cardsGrid.innerHTML=f.map(cardHTML).join('');}
+    }
+
+    searchInput.addEventListener('input',function(){searchQuery=this.value;searchClear.classList.toggle('visible',searchQuery.length>0);render();});
+    searchClear.addEventListener('click',function(){searchInput.value='';searchQuery='';searchClear.classList.remove('visible');searchInput.focus();render();});
+    docCount.textContent=documents.length;
+    render();
+  })();
+  </script>
+</body>
+</html>
